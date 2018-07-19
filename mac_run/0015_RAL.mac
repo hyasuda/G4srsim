@@ -1,0 +1,355 @@
+# Macro file for musr.cc - Construct detector, set fields and other parameters.
+# Last modified by T. Shiroka: 17.03.2008
+# PB MACRO TEST 20 Feb 2009 
+#
+
+# How to run from run directory: ../bin/Linux-g++/musrSim xxxx.mac  (append "idle" for prompt after running)
+#             ../bin/Linux-g++/musrSim xxxx.mac > fname.txt (stores output on a txt file)
+
+###############################################################################################
+# New commands: /gun/starttime                                                              
+#               /gun/starttimesigma
+# New solids:   cylpart
+###############################################################################################
+
+###############################################################################################
+#                                                                                             # 
+# Specify the geometry parameters in this file (all dimensions in mm)                         #
+# a. Lines starting with hash marks "#" are comments                                          #
+# b  Lines starting with #* are temporary comments. Remove/modify to change the configuration #
+# c. Lines starting with /lem4/command are commands for the executable program                #
+# d. Lines starting with /vis, /gun, etc. are common macro commands                           # 
+# e. Beam-line components are ordered from MCH to sample                                      # 
+# f. z axis of MCH is at x=-780 mm  ; z axis of sample is at x=+780 mm                        #
+# g. z position of the center between T and S1 is z=-845 mm                                   #
+# h. positions are always relative to the mother volume !!!                                   #
+#---------------------------------------------------------------------------------------------#
+# Syntax example (following /lem4/command):                                                   #
+# construct solid_type volume_name parameters_defining_solid  material position mothers_name  #
+#                                                            (mothers_name starts with log_)  #
+###############################################################################################
+
+# For the meaning of the acronyms see also the original G3 file ugeom.F at:
+# http://savannah.psi.ch/viewcvs/trunk/simulation/geant3/src/lemsr/ugeom.F?root=nemu%2Flem&rev=2964&view=markup
+
+################################################################################################################
+# -- ROTATION MATRICES --
+################################################################################################################
+
+# 3 parameters -> Define Euler angles (the 4th par. is set to zero).
+# 4 parameters -> Define axis + rotation.
+# HEP computations ordinarily use the active rotation viewpoint (object is rotated NOT axes). 
+# Therefore, rotations about an axis imply ACTIVE COUNTER-CLOCKWISE rotation in this package.
+# Rotation around a specified axis means counter-clockwise rot. around the positive direction of the axis.
+
+# Define rotations for the field maps of Trigger and Ring Anode:
+/musr/command rotation rotU  0  0  1  180
+/musr/command rotation rotD  0  0  1    0
+/musr/command rotation rotR  0  0  1   90
+/musr/command rotation rotL  0  0  1  -90
+
+
+################################################################################################################
+# -- BEAMLINE GEOMETRY --
+################################################################################################################
+
+# WORLD = Laboratory reference frame, the origin is in the centre of the MCH top flange
+/musr/command construct box World 1100 300 1030 G4_Galactic 0 0 0 no_logical_volume norot dead -1
+# MINIMUM WORD HALF LENGTH 1250 mm!
+#/musr/command construct box World 2000 2000 4000 G4_Galactic 0 0 0 no_logical_volume norot dead -1
+
+# World visual attributes (optional)
+/musr/command visattributes log_World lightblue
+
+
+#==============================================================================================================
+# MAIN CHAMBER                       Rmin Rmax  D/2                      x0 y0 z0
+#==============================================================================================================
+/musr/command construct tubs MCH    199.2 203.2 260   0 360 Steel         780 0 -744   log_World  norot dead 100
+/musr/command construct tubs MCHvac   0   199.2 243   0 360 G4_Galactic   780 0 -744   log_World  norot dead 101
+/musr/command construct tubs FLvac    0    98.6  20.5 0 360 G4_Galactic   780 0 -480.5 log_World  norot dead 102
+
+#==============================================================================================================
+# SOA LENS
+#==============================================================================================================
+/musr/command construct tubs Grid    40    87     1 0 360 Steel           0 0  -93   log_MCHvac norot dead 110
+/musr/command construct tubs SOAp1   38    87    19 0 360 Steel           0 0  -56   log_MCHvac norot dead 111
+/musr/command construct tubs SOAp2   70    74    98 0 360 Steel           0 0   71   log_MCHvac norot dead 112   
+/musr/command construct tubs SOAp3   38    87     1 0 360 Steel           0 0  180   log_MCHvac norot dead 113
+
+#================================================================================================================
+#  Spacer 1
+#================================================================================================================
+/musr/command construct tubs SP1     80    82   222.5 0 360 Steel         780 0  -237.5 log_World norot dead 120
+/musr/command construct tubs SP1vac   0    80   222.5 0 360 G4_Galactic   780 0  -237.5 log_World norot dead 121
+
+#================================================================================================================
+#  GV1
+#================================================================================================================
+/musr/command construct tubs GV1     0    80  40 0 360 G4_Galactic       780 0    25   log_World norot dead 130
+
+#================================================================================================================
+#  Q1    cylpart: Rmin Rmax Length/2 height
+#================================================================================================================
+/musr/command construct tubs Q1ch     98.6 101.6  80 0 360 Steel         780 0    145   log_World norot dead 140
+/musr/command construct tubs Q1vac     0    98.6  80 0 360 G4_Galactic   780 0    145   log_World norot dead 141
+/musr/command construct cylpart Q1R    0    45.6  40 20    Steel	   -85.6 0      0   log_Q1vac rotR  dead 142
+/musr/command construct cylpart Q1L    0    45.6  40 20    Steel	    85.6 0      0   log_Q1vac rotL  dead 143
+/musr/command construct cylpart Q1D    0    45.6  40 20    Steel	       0 -85.6  0   log_Q1vac rotD  dead 144
+/musr/command construct cylpart Q1U    0    45.6  40 20    Steel	       0  85.6  0   log_Q1vac rotU  dead 145
+
+# KAMIL - TEST VOLUME:
+/musr/command construct tubs Sample1     0    90  1 0 360 G4_Cu            0  0   78   log_Q1vac norot dead 201
+/musr/command construct tubs SampleBack  0   190  1 0 360 G4_Cu            0  0   -240 log_MCHvac norot dead 202
+
+#flange on the end of MCP
+#/musr/command construct tubs Flg1    99   126.6  12.5 0 360 Steel         0 0  364.5  - dimensions relative to MCHVAC but this is already outside
+# Beam spot (just for having a visual idea!)
+/musr/command construct tubs saveBSpot    0   20    0.1  0 360  G4_Galactic   0 0  -87.5 log_SP1vac  norot musr/ScintSD 650
+
+/musr/command visattributes log_saveBSpot    darkred
+
+# One can set visible attrib. also on a MATERIAL basis, rather than on log_VOL.
+/musr/command visattributes Steel blue
+/musr/command visattributes log_Q1R green
+/musr/command visattributes log_Q1L green
+/musr/command visattributes log_Q1U green
+/musr/command visattributes log_Q1D green
+
+#==================================================================================================================
+#    Applying fields
+#===================================================================================================================
+
+#/musr/command construct tubs MCHvac2   0   199.2 243 0 360 G4_Galactic   0 0 0 log_World  norot dead 101
+#/musr/command globalfield SOA_field  0 0 0 fromfile 3DE SOA_3D_map.map log_MCHvac2 1.00
+/musr/command globalfield SOA_field  780 0 -708  fromfile 3DE SOA_3D_map.map log_MCHvac 1.0
+
+/musr/command globalfield Q1_field  780 0 145  fromfile 3DE Q1_3D_map.map log_Q1vac -0.793
+#/musr/command globalfield SOA_field  780 0 145  fromfile 3DE Q1_3D_map.map log_Q1vac -1.586
+#/musr/command globalfield SOA_field  780 0 145  fromfile 3DE Q1_3D_map.map log_Q1vac -0.3965
+
+/musr/command globalfield printFieldValueAtPoint  780 0 -880
+/musr/command globalfield printFieldValueAtPoint  780 0 -850
+/musr/command globalfield printFieldValueAtPoint  780 0 -849
+/musr/command globalfield printFieldValueAtPoint  780 0 -848
+/musr/command globalfield printFieldValueAtPoint  780 0 -847
+/musr/command globalfield printFieldValueAtPoint  780 0 -846
+/musr/command globalfield printFieldValueAtPoint  800 0 -845
+/musr/command globalfield printFieldValueAtPoint  795 0 -845
+/musr/command globalfield printFieldValueAtPoint  790 0 -845
+/musr/command globalfield printFieldValueAtPoint  785 0 -845
+/musr/command globalfield printFieldValueAtPoint  783 0 -845
+/musr/command globalfield printFieldValueAtPoint  780 0 -845
+/musr/command globalfield printFieldValueAtPoint  780 0 -844
+/musr/command globalfield printFieldValueAtPoint  780 0 -843
+/musr/command globalfield printFieldValueAtPoint  780 0 -842
+/musr/command globalfield printFieldValueAtPoint  780 0 -841
+/musr/command globalfield printFieldValueAtPoint  780 0 -840
+/musr/command globalfield printFieldValueAtPoint  780 0 -830
+/musr/command globalfield printFieldValueAtPoint  780 0 -808
+/musr/command globalfield printFieldValueAtPoint  780 0 -708
+/musr/command globalfield printFieldValueAtPoint  780 0 -608
+/musr/command globalfield printFieldValueAtPoint  780 0 -508
+/musr/command globalfield printFieldValueAtPoint  780 0 -408
+/musr/command globalfield printFieldValueAtPoint  780 0 -308
+
+
+
+# Set parameters for particle tracking in an EM field
+/musr/command globalfield setparameter SetLargestAcceptableStep 0.5
+/musr/command globalfield setparameter SetMinimumEpsilonStep 5e-5
+/musr/command globalfield setparameter SetMaximumEpsilonStep 0.001
+/musr/command globalfield setparameter SetDeltaOneStep 0.1
+/musr/command globalfield setparameter SetDeltaIntersection 0.01
+/musr/command globalfield printparameters
+
+
+###################################################################################
+#########################  P H Y S I C S      P R O C E S S E S  ##################
+###################################################################################
+# --- Low Energy (default) ---
+#*/musr/command process addDiscreteProcess gamma G4LowEnergyPhotoElectric
+#*/musr/command process addDiscreteProcess gamma G4LowEnergyCompton
+#*/musr/command process addDiscreteProcess gamma G4LowEnergyGammaConversion
+#*/musr/command process addDiscreteProcess gamma G4LowEnergyRayleigh
+/musr/command process addProcess         e-    G4MultipleScattering -1 1 1
+#/musr/command process addDiscreteProcess e-    G4CoulombScattering
+#/musr/command process addProcess         e-    G4LowEnergyIonisation -1 2 2
+#/musr/command process addProcess         e-    G4LowEnergyBremsstrahlung -1 -1 3
+/musr/command process addProcess         e+    G4MultipleScattering -1 1 1
+#/musr/command process addDiscreteProcess e+    G4CoulombScattering
+/musr/command process addProcess         e+    G4eIonisation    -1 2 2
+/musr/command process addProcess         e+    G4eBremsstrahlung   -1 3 3
+/musr/command process addProcess         e+    G4eplusAnnihilation 0 -1 4
+#
+# --- High Energy ---
+#/musr/command process addDiscreteProcess gamma G4PhotoElectricEffect
+#/musr/command process addDiscreteProcess gamma G4ComptonScattering
+#/musr/command process addDiscreteProcess gamma G4GammaConversion
+#/musr/command process addProcess         e-    G4MultipleScattering -1 1 1
+##/musr/command process addDiscreteProcess e-    G4CoulombScattering
+#/musr/command process addProcess         e-    G4eIonisation       -1 2 2
+#/musr/command process addProcess         e-    G4eBremsstrahlung   -1 3 3
+#/musr/command process addProcess         e+    G4MultipleScattering -1 1 1
+##/musr/command process addDiscreteProcess e+    G4CoulombScattering
+#/musr/command process addProcess         e+    G4eIonisation    -1 2 2
+#/musr/command process addProcess         e+    G4eBremsstrahlung   -1 3 3
+#/musr/command process addProcess         e+    G4eplusAnnihilation 0 -1 4
+#
+# --- Penelope ---
+#/musr/command process addDiscreteProcess gamma G4PenelopePhotoElectric
+#/musr/command process addDiscreteProcess gamma G4PenelopeCompton
+#/musr/command process addDiscreteProcess gamma G4PenelopeGammaConversion
+#/musr/command process addDiscreteProcess gamma G4PenelopeRayleigh
+#/musr/command process addProcess         e-    G4MultipleScattering -1 1 1
+##/musr/command process addDiscreteProcess e-    G4CoulombScattering
+#/musr/command process addProcess         e-    G4PenelopeIonisation   -1 2 2
+#/musr/command process addProcess         e-    G4PenelopeBremsstrahlung -1 -1 3
+#/musr/command process addProcess         e+    G4MultipleScattering -1 1 1
+##/musr/command process addDiscreteProcess e+    G4CoulombScattering
+#/musr/command process addProcess         e+    G4PenelopeIonisation,     -1  2 2
+#/musr/command process addProcess         e+    G4PenelopeBremsstrahlung, -1 -1 3
+#/musr/command process addProcess         e+    G4PenelopeAnnihilation,    0 -1 4
+#
+# --- Muons ---
+/musr/command process addProcess          mu+   G4MultipleScattering -1 1 1
+#/musr/command process addProcess          mu+   MultipleAndCoulombScattering -1 1 1 goulombRegion
+#/musr/command process addDiscreteProcess  mu+   G4CoulombScattering
+/musr/command process addProcess          mu+   G4MuIonisation       -1 2 2
+/musr/command process addProcess          mu+   G4MuBremsstrahlung   -1 3 3
+/musr/command process addProcess          mu+   G4MuPairProduction   -1 4 4
+/musr/command process addProcess          mu-   G4MultipleScattering -1 1 1
+#/musr/command process addDiscreteProcess  mu-   G4CoulombScattering
+/musr/command process addProcess          mu-   G4MuIonisation       -1 2 2
+/musr/command process addProcess          mu-   G4MuBremsstrahlung   -1 3 3
+/musr/command process addProcess          mu-   G4MuPairProduction   -1 4 4
+# --- Muonium ---
+/musr/command process addProcess          mu+   musrMuFormation     -1 -1 2
+#cks - the following line not supported yet, has to be tested (at the moment, musrMuScatter is hard wired in the musrPhysicsList.cc):
+#/musr/command process addProcess          Mu   musrMuScatter        -1 -1 1
+
+
+################################################################################################################
+# -- Setting simulation PARAMETERS --
+################################################################################################################
+
+# Set the overall range cut (default 0.1 mm)
+#*/run/setCut 1 mm
+
+# Set user limits
+#/musr/command SetUserLimits log_World ustepMax(mm) utrakMax(mm) utimeMax(ns) uekinMin(MeV) urangMin(mm)
+/musr/command SetUserLimits log_World      -1         -1             -1          1e-7          -1
+
+# Store ALL the events in a ROOT tree or just the interesting ones? (default is true)
+/musr/command storeOnlyEventsWithHits false
+
+# Set the minimum time separation between two subsequent signals in the same detector (in ns)
+/musr/command signalSeparationTime 0.1
+
+# Override runID number
+#*/musr/run/runID 21
+
+# Set the frequency of event printing
+/musr/run/howOftenToPrintEvent 1
+
+# RANDOM option choices: (specify the random number generator initialisation)
+# 0 ... no initialisation (default)
+# 1 ... use actual computer time to initialise now                    # Pseudo-random numbers
+# 2 ... use event number to initialise at the beginning of each event # Reproducible numbers
+# 3 ... read in the random no. initial values for each event from a file
+/musr/run/randomOption 2
+
+# VISUALIZATION options
+# To enable or disable visualization uncomment one of these lines
+# To modify visualization options edit the file vis.mac
+#/vis/disable
+/control/execute vis.mac
+#*/control/execute visVRML.mac
+
+
+################################################################################################################
+# -- Setting PARTICLE GUN parameters --
+################################################################################################################
+
+# Default momentum  direction: 001, i.e. 0z.
+# Default muon spin direction: 100, i.e. 0x.
+# Default particle type: mu+ (can be changed to Mu)
+
+# Set particle type	
+#*/gun/particle Mu
+/gun/particle mu+
+
+# Set beam vertex 
+# CFoil at -1144 mm, acceleration starts at -1154.15 mm
+/gun/vertex  780. 0. -845. mm
+
+# A point-like uniform beam
+#/gun/vertexsigma -0.1 -0.1 0 mm
+
+# Set beam transverse spread (default GAUSSIAN spread)
+# If FWHM = 10 mm ==> sigma = 10/2.354 = 4.2481 mm (last 0 is a dummy value)
+# Negative sigma values => random FLAT RECTANGULAR distribution (area 2x.2y)
+# Use vertexboundary with (vb < sigma_xy) to obtain a CIRCULAR beam spot
+# /gun/vertexsigma 0 0 0 mm ==> Very SLOW with mag. field ON and centered beam
+#*/gun/vertexsigma  42.5  42.5  0 mm 
+/gun/vertexsigma   4 4   0.1  mm
+
+#                   Rmax   zmin     zmax
+#/gun/vertexboundary  20.   -845.5    -844.5 mm
+
+# /gun/vertexboundary: rMaxAllowed, zMinAllowed, zMaxAllowed # Beam AND gating
+#*/gun/vertexboundary 7 -1314.4 -1305 mm
+# Without restrictions in z, but only on r:
+#*/gun/vertexboundary 3 -1e6 1e6 mm
+
+# Set beam momentum (USE only as an ALTERNATIVE to setting energy!)
+/gun/momentum 0.00286 MeV
+#*/gun/momentum 0 0  1.8  MeV
+# Energy loss at p = 1.2 MeV/c (E =  6.8 keV) => 1.23 +/- 0.2 keV
+# Energy loss at p = 1.8 MeV/c (E = 15.3 keV) => 1.25 +/- 0.3 keV
+# 1.2 MeV/c -> 6.8 keV, 1.8 MeV/c -> 15.3 keV
+# muon rest mass = 105.658 MeV/c2
+
+# Set muon energy before hitting TD; a constant field in front of the C-foil accelerates the muons
+# to add 3.73 keV 
+#/gun/kenergy 0.001 keV 
+
+# Set beam momentum direction
+#/gun/direction 0.0 0.0 1.0 direction command not defined in musrSim version
+##/gun/momentumsmearing 0.00111 MeV
+#/gun/momentumsmearing 0 MeV
+#/gun/tilt 0 0 0 deg
+##/gun/tiltsigma 90 90 0 deg
+
+# Set muon spin direction
+/gun/muonPolarizVector 0 0 -1
+/gun/muonPolarizFraction 0.5
+
+# Set time profile of the ionize muonium (muon starting time)
+/gun/starttime 100 ns
+/gun/starttimesigma 0.425 ns
+
+# Other useful test parameters:
+#
+# FWHM = 3%  ==> sigma = 29.79*0.03/2.354 = 0.37965 MeV/c
+#*/gun/momentumsmearing 0.37965 MeV
+#---/gun/momentumboundary: pMinAllowed, pMaxAllowed, dummy
+#*/gun/momentumboundary 20 40 0 MeV
+#---/gun/tilt: xangle, yangle, dummy
+#*/gun/tilt 0  0.5  0 deg
+#---/gun/tiltsigma: xangleSigma, yangleSigma, dummy  (1 degree at 1 m => 17 mm)
+#*/gun/tiltsigma 0.2 0.2 0 deg
+#*/gun/pitch 0.5 deg
+#---/gun/decaytimelimits: decayMin, decayMax, decayTime
+#*/gun/decaytimelimits 10400 10420 2197.03 ns
+
+# Selectively inactivate or activate sensitive detectors
+#*/hits/inactivate /musr/ScintSD
+
+# Only for code debugging!
+#/tracking/verbose 1
+
+# BEAM ON
+#*/run/beamOn 1000000
+/run/beamOn   100
+#*/run/beamOn 20
