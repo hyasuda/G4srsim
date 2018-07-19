@@ -1,0 +1,934 @@
+\documentclass[twoside]{dis04}
+%\def\runauthor{Kamil Sedl\'{a}k}
+\def\runauthor{PSI}
+% for the H1 collaboration}
+\def\shorttitle{musrSim}
+\begin{document}
+
+%\newcommand{\xgmy}{\ensuremath{x^{\mathrm{jets}}_\gamma} }
+%\newcommand{\GeV}{\ensuremath{\mathrm{GeV}} }
+%\newcommand{\pb}{\ensuremath{\mathrm{pb}} }
+%\newcommand{\gevsq}{\ensuremath{\mathrm{GeV}^2} }
+%\newcommand{\Etone}{\ensuremath{E^*_{T\, 1}} }
+%\newcommand{\Ettwo}{\ensuremath{E^*_{T\, 2}} }
+%\newcommand{\Etmy}{\ensuremath{E^*_T} }
+%\newcommand{\etaone}{\ensuremath{\eta^*_{1}} }
+%\newcommand{\etatwo}{\ensuremath{\eta^*_{2}} }
+%\newcommand{\etamy}{\ensuremath{\eta^*} }
+%\newcommand{\ycut}{\ensuremath{y_c} }
+\newcommand{\musr}{\ensuremath{\mu}SR}
+
+\title{Manual of musrSim}
+%\title{GEANT Simulation Program for the
+%$\mathbf{\mu}$SR Instruments}
+
+\author{Kamil Sedl\'ak$^1$, Toni Shiroka$^1$, Zaher Salman$^1$, Tom Lancaster$^2$, Thomas Prokscha$^1$, Taofiq Paraiso$^1$}
+
+\address{{$^1$ Laboratory for Muon Spin Spectroscopy, Paul Scherrer Institut, CH-5232 Villigen PSI, Switzerland}\\
+$^2$ Clarendon Laboratory, Department of Physics, Oxford University, Parks Road, Oxford OX1 3PU, UK}
+%\address{{\rm (on behalf of the H1 collaboration)}\\
+%Institute of Physics AS\,CR\\
+%%Academy of Sciences of the Czech Republic
+%Na Slovance 2, 182 21 Praha 8, Czech Republic\\
+%E-mail: ksedlak@fzu.cz}
+
+\maketitle
+
+\abstracts{
+``musrSim'' is a simulation program based on Geant4,
+optimised for the $\mu$SR instruments.
+This document describes some of the commands used in the user macros
+of the simulation program for the $\mu$SR instruments based on the {\sc
+Geant4}. The root output variables are also described.
+}
+
+%========================================================================================================
+\section{Scope of the musrSim program}
+The program ``musrSim'' is a relatively general program that can be used to simulate 
+the response of a $\mu$SR~\cite{Blundel:1999} instruments (detectors) to muons and their decay particles 
+(electrons, positrons and gammas).  Even though musrSim is tailored to the needs of 
+the $\mu$SR technique~\cite{shirokaGeant}, it has been used also in the detector development
+studies without any muons involved, e.g.\ to test the response of an APD-based 
+scintillator counters to the irradiation of Sr radioactive source~\cite{AlexeyTestAPD}.
+
+The program is based on the Geant4~\cite{geant} and Root~\cite{root} libraries.
+Geant4 is Monte Carlo toolkit used (not only) in particle physics to simulate
+the passage of particles through the detectors.
+Root is an analysis tool that allows to manipulate and analyse the simulated data, 
+namely to plot histograms and other graphical output.
+
+The aim of the musrSim is to provide an easy-to-use simulation program, which does
+not require a deep knowledge of Geant4 in order to simulate a ($\mu$SR) detector.
+In our view, the main advantages of musrSim are:
+\begin{itemize}
+	\item Simple way how to define or modify the instrument geometry.
+	\item Limited (ideally no) need to modify and/or recompile the source code.
+	\item Implementation of the  $\mu$SR-specific classes (muon spin rotation
+	      in magnetic fields, muonium formation and decay, ...).
+	\item Possibility to read in the output files of the TURTLE~\cite{turtle}
+	      program for the beam-line simulation.
+	\item Simple way how to define (overlapping) electromagnetic fields.
+	\item Output in the Root tree.
+\end{itemize}
+%
+On the other hand, there are also some drawbacks and limitations:
+\begin{itemize}
+	\item The user has to have an installation of Geant4 and Root before installing musrSim. 
+	\item It is supposed the user will analyse the data with Root, therefore
+	      Root has to be installed and some knowledge of it is needed.
+	      Even though is relatively easy to simulate a $\mu$SR instrument, 
+	      and to create the output Root file without even knowing the c++ 
+              programming language, some c++ programming is needed to 
+	      analyse the simulation output and to plot graphs.
+	\item At present time the program does not simulate any muon-spin related
+              physics processes happening in the sample, except for the muon 
+              spin rotation.
+	\item The simulation of one event takes much more time than the measurement
+	      of a real event. The simulation time depends on the
+	      complexity of the instrument geometry and on the presence of
+	      electromagnetic fields.  To simulate one million of muons
+	      in the case of the PSI high-field instrument took about 10 hours
+	      of a computer time of a desktop PC.
+\end{itemize}
+
+%=============================================================================================
+\section{How to install and run musrSim}
+To install and run musrSim, one has to install Geant4 and Root first.
+The present version of musrSim has been tested with Geant version 4.9.1, patch no.~3
+and Root version 5.20.00.
+
+Once Geant4 has been successfully installed and some of the default Geant4 exmples
+has been run, the musrSim installation package can be downloaded from the web page 
+http://lmu.web.psi.ch/simulation/index.html.
+Usually the ``env.sh'' script has to be run to set-up the environment variables
+appropriatelly before the musrSim or any other Geant4 application can be compiled
+or run.
+The simulation can be executed by \emph{``musrSim RUNNUMBER.mac''}, where RUNNUMBER.mac is a ``macro file''
+containing the information about the instrument setup.  The string ``RUNNUMBER'' represents the integer run number.
+
+In order to simulate a new instrument, the user has to define the following blocks of information
+in the macro file:
+%
+\begin{itemize}
+	\item Define the geometry (the so-called ``volumes'') of the new instrument.
+	Note that in Geant4 volumes can be included inside other volumes 
+	(a ``daughter'' volume is positioned inside the ``mother'' volume),
+	and it is therefore necessary to distinguish between the global (world)
+	coordinates and the coordinates of the daughter volumes (local coordinates).
+	It is not allowed to overlap any two different volumes partially.
+	\item Define the electric and magnetic fields.
+	\item Define physics processes relevant for your case.
+	\item Define the initial muon parameters (more generally -- initial particle parameters).
+	\item Define some other parameters influencing the execution of the simulation.
+	\item Define which variables should be written out to the output Root tree.
+	\item In case it is required to visualise the geometry, define the visualisation attributes.
+\end{itemize}
+
+By default, the output of the simulation is written out in the subdirectory ``data'' with
+the name ``musr\_RUNNUMBER.root''.
+
+\section{Conventions}
+The default units of the musrSim in both the macro file (RUNNUMBER.mac) and in the Root tree 
+are summarised in table~\ref{tab:units}.
+\begin{table}[htb]\centering
+\renewcommand{\arraystretch}{1.05}
+  \begin{tabular}{lp{5mm}l}
+    \hline
+    \lower 1mm \hbox{\textbf{Quantity}}  &&  \lower 1mm \hbox{\textbf{Default unit}} \\[5pt]
+    \hline
+     Length      &&  mm  \\
+     Time        &&  $\mu$s  \\
+     Energy      &&  MeV \\
+     Momentum    &&  MeV/c\\
+     Magnetic field   && tesla \\
+     Electric field   && keV/mm \\
+     \hline
+  \end{tabular}
+  \caption{The default units in musrSim.}
+  \label{tab:units}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Detector construction}
+
+\begin{description}
+
+\item{\bf /musr/command rotation \emph{matrixName} $\alpha$ $\beta$ $\gamma$} \\
+	{\bf /musr/command rotation \emph{matrixName} \emph{vx} \emph{vy} \emph{vz} \emph{angle}}\\
+	These commands define a rotation matrix of the name \emph{matrixName} that can be used later on
+	during the definition of the detector geometry (see command ``/musr/command construct'').
+	It can be defined either by the Euler angles (if there are three float parameters behind the
+        \emph{matrixName}) or by the vector \emph{(vx,vy,vz)} and an \emph{angle} of rotation around this
+	vector (if the fourth float parameter behind the \emph{matrixName} is non-zero).
+	All angles are specified in degrees.
+
+\item{\bf /musr/command construct \emph{solid} \emph{name} \emph{dimensions} ... \emph{material} 
+	\emph{x} \emph{y} \emph{z} \emph{motherVolume} \emph{matrixName} 
+	\emph{sensitiveClass} \emph{idNumber} }\\
+	This command defines a volume in {\sc Geant4} (It comprises three steps of {\sc Geant4}: defines a solid,
+        logical volume and physical volume.  Details can to be found in {\sc Geant4} manual). \\
+	\begin{itemize}
+	\item \emph{solid} (string) can be one of the G4VSolid.cc particular types, presently ``tubs'', ``cons'',
+	             ``box'', ``trd'', ``sphere'', ``para'',
+	             or it can be one of the specifically implemented solids by our program as ``uprofile'' 
+	             (an U-profiled bar), ``alcSupportPlate'' (shape specific to ALC support plate), ``tubsbox'' 
+	             (a tube with a rectangular hole along its axis), "tubsboxsegm" 
+	             (a volume that looks like an intersection of tube and box) and 
+                     ``trd90y'' (a trd volume rotated by 90 degrees around $y$ axis in addition
+                     to the rotation requested by \emph{matrixName}).  Not all G4VSolids are
+                     presently supported, but it is relatively easy to implement a new kind of solids
+                     in the musrDetectorConstruction.cc class.
+	\item \emph{name} (string) stands for the name of the volume.  As the command 
+		     ``/musr/command construct'' constructs
+	             three kinds of classes/volumes (the solid, logical volume and physical 
+	             volume), there are three names of the concrete volume used internally inside 
+                     musrSim: sol\_\emph{name}, log\_\emph{name} and phys\_\emph{name}.
+	              The main volume, inside which all other volumes are positioned, has to be called  ``World''.
+	\item \emph{dimensions} (floats) define the size of the required solid.  They are kept equivalent to the
+	             dimensions of solids as used in {\sc Geant4}.  For example the ``box'' is defined
+	             by its {\bf halflengths} along $x$, $y$ and $z$ coordinates.  Note that the number of
+	             \emph{dimensions} varies for each type of solid.  The units are mm for lengths
+		     and degrees for angles.
+	\item \emph{material} (float) one of the materials defined in {\sc Geant4}, namely in the file 
+	             \$G4INSTALL/source/materials/src/G4NistMaterialBuilder.cc (e.g. ``G4\_Galactic'' for
+	             vacuum, ``G4\_Cu'' for copper, ``G4\_AIR'' for air, 
+                     ``G4\_PLASTIC\_SC\_VINYLTOLUENE'' for a scintillator, ...).
+	             One can also define a new material inside the function 
+                     musrDetectorConstruction::DefineMaterials().  Presently ``Mylar'', ``Brass'' 
+                     ``Steel'', ``Macor'', ``MCPglass'', ``MgO'', ``SiO2'', ``K2O'' and ``B2O3'' are defined there.
+	\item \emph{x, y, z} (floats) -- coordinates of the volume, used to position the volume within
+                     its mother volume (as used by the G4PVPlacement).  
+		     Thus these coordinates are interpreted in the local coordinate system of the \emph{motherVolume}.
+	\item \emph{motherVolume} (string) -- name of the mother volume, in which the given volume should be
+	             positioned.  Note that the mother volume has to be defined first (before its
+                     daughter), and that the name of mother starts with a string {\bf log\_}\emph{name},
+	             following the naming convention defined above.  
+	             When the ``World'' volume is defined, its \emph{motherVolume} should be set to ``no\_logical\_volume''.
+	\item \emph{matrixName} (string) -- name of the rotation matrix that will be used to position
+	             the volume inside its mother volume (as used in member function G4PVPlacement).  
+	             Use string ``norot'' if no rotation is required for the given volume.
+	             Otherwise the rotation matrix has to be defined by the command line 
+	             ``/musr/command rotation'' {\bf before} the given volume is defined. 
+        \item \emph{sensitiveClass} (string) -- specifies whether the volume is sensitive detector or
+		     just a piece of a ``dead'' material.
+	             Use the string ``dead'' for the latter,
+	             and the string ``musr/ScintSD'' for a scintillator (a sensitive volume, i.e.\
+                     a volume where hits are observed).  No other detector type
+	             (other than ``dead'' and ``musr/ScintSD'') is supported at the moment, but
+	             the program might be extended in the future (e.g. to properly include also the
+	             semiconductor tracking detectors, etc.).
+	\item \emph{idNumber} (int) -- serves as a unique identifier of the volume.  It is primarily
+	             used in the output Root tree to identify the volume: 1) in which a muon stopped 
+	             (tree variable ``muDecayDetID''), 
+	             2) in which hits were deposited in case of sensitive volume 
+                     (the variable ``det\_ID[det\_n]'').
+	\end{itemize}	
+
+\item{\bf /musr/command region define  \emph{regionName} \emph{logicalVolume}}\\
+	The ``G4Region'' can be created using this command, and a logical volume of the
+	name \emph{logicalVolume} will be assigned to it.  If the G4Region of the name 
+	\emph{regionName} does not exist (i.e.\ the command ``/musr/command region define''
+	is called for the first time for this particular \emph{regionName}), the G4Region will
+	be created first, otherwise the logical volume \emph{logicalVolume} will be just assigned
+	to the already existing G4Region.  \\
+	G4Region can be useful namely for setting some special Geant4 parameters (production cuts)
+	just in some part of the detector (e.g.\ where a finer simulation is needed).
+	See Geant4 manual for more details.
+
+\item{\bf /musr/command region setProductionCut \emph{regionName} \emph{gammaCut} \emph{electronCut} \emph{positronCut}}\\
+	Set the so-called ``production cuts'' in the G4Region called \emph{regionName}.
+	The variables \emph{gammaCut, electronCut} and \emph{positronCut} are given in mm.
+\end{description}
+Three special volumes ``Target, M0, M1 and M2''.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Electric and magnetic fields}
+\begin{description}
+\item{\bf /musr/command globalfield \emph{fieldName} \emph{half\_x} \emph{half\_y} \emph{half\_z} uniform 
+	\emph{X} \emph{Y} \emph{Z} \emph{logicalVolume} \emph{Bx} \emph{By} \emph{Bz} \emph{Ex} \emph{Ey} \emph{Ez}} \\
+	or \\
+	{\bf /musr/command globalfield \emph{fieldName} \emph{X} \emph{Y} \emph{Z} fromfile
+	\emph{fieldTableType} \emph{fieldInputFileName} \emph{logicalVolume} \emph{fieldValue} 
+	\emph{[fieldValueFinal]} \emph{[fieldNrOfSteps]}} \\
+	This command specifies the electric and/or magnetic fields, which are (in some sense)
+	independent of any logical volume and can overlap with each other.
+	In the case of tabulated field read in from and external field map file the
+	field values used internally by the Geant4 are linearly interpolated using
+	eight (3D) or four (2D) grid points surrounding the point of interest.
+%
+	\begin{itemize}
+	   \item \emph{fieldName} (string) -- name of the field (important mainly for the user and 
+		print-out messages of the musrSim.
+	   \item \emph{half\_x}, \emph{half\_y}, \emph{half\_z} (floats) -- the (half) dimensions
+		of the box, within which the uniform field is defined.
+	   \item {\bf uniform / fromfile} -- specifies whether the field is uniform within
+		some volume or whether it is read in from an external file as a field-map.
+	   \item \emph{X}, \emph{Y}, \emph{Z} (floats) -- position of the centre of the field
+		in the {\bf global} coordinate system. IMPORTANT: For some technical internal
+		Geant4 reasons, this POSITION HAS TO LAY WITHIN THE \emph{logicalVolume}!
+		(Note that the logical volume may be positioned somewhere deep in a volume
+                 structure, not directly within the ``World'' volume, and
+		therefore the (local) coordinates in the definition of the the logical volume
+		do not have to match the (global) coordinates \emph{X}, \emph{Y} and \emph{Z}.
+	   \item \emph{logicalVolume} (string) -- specifies the logical volume, to which
+		the field is ``assigned''.  One may ask, why a logical volume is needed for a field
+		``independent'' of any Geant4 volume?  The reason is purely technical - the
+		logical volume is used to allow the field to be rotated the same way as
+		the assigned logical volume. 
+		The field can be smaller or larger than the logical
+		volume, to which it is assigned.  
+		The field extending out of the logical volume will 
+		also be used in the Geant4 calculations (will be not truncated).
+		The only limitation is that the centre
+		of the volume has to lay within the assigned logical volume (see above).
+		Sometimes it might be useful to create a very small volume (e.g. of the order of 0.01\,mm)
+		to position a rotated field into a (differently rotated or unrotated) 
+		larger volume.  The volume can also be made of vacuum (i.e.\ G4\_Galactic).
+	   \item \emph{Bx}, \emph{By}, \emph{Bz}, \emph{Ex}, \emph{Ey}, \emph{Ez} (float) -- the vector
+		of the uniform electromagnetic field.  The units are tesla, for the first three
+		components, and kilovolt/mm for the last three components.
+	   \item \emph{fieldTableType} (string) -- specifies the format in which the field map is
+		written in the file.  In general, the field is specified in a grid of
+		three space coordinates $x$, $y$ and $z$ (3D).
+		Sometimes it is convenient to use the symmetry of the field
+		and to reduce the field description to $R$ and $z$ (2D) only.  
+		In the following, we use this terms: \\
+		\emph{nx, ny, nz} or \emph{nR, nz} -- the number of divisions of the grid in
+		\emph{x, y, z} or \emph{R, z}.
+		\emph{length unit} -- the unit in which the grid coordinates are specified, usually
+		cm or m.\\
+		\emph{field normalisation factor} -- a multiplicative factor applied to the values
+		of the field map to normalise the field (usually to 1\,tesla or to 1\,kV/mm in the
+		centre of the field map).\\
+		\emph{minimumx, maximumx, minimumy, maximumy, minimumz, maximumz} -- the
+		minimum and maximum value in x, y and z coordinates.  These values can be usually easily
+		calculated from the field map itself, however the field can also be specified
+		in a compact format in which case the $x$, $y$ and $z$ coordinates are removed from
+		the field map file,
+		and the maxima and minima of coordinates have to be specified.\\
+		The following formats are supported:\\
+		{\bf 3DB, 3DE} -- magnetic or electric field specified in $x$, $y$ and $z$
+			coordinate system.  The first line of the file has to contain
+			the information about \emph{nx, ny, nz, length unit} and 
+			\emph{field normalisation factor}.  Optionally, a compact form
+			of the field map can be specified, in which case
+			\emph{minimumx, maximumx, minimumy, maximumy, minimumz, maximumz}
+			has to be added to the first line of the file.
+			The next few lines of the field map file beginning with
+			the character ``\%'' are comments.
+			The following lines specify the \emph{x, y, z, Field\_x, Field\_y, Field\_z}
+			values (non-compact format) or \emph{Field\_x, Field\_y, Field\_z} values
+			(compact format).\\
+		{\bf 3DBOpera} -- 3D magnetic field in the form of OPERA output.
+			It is expected that the \emph{length unit} is 1\,m, and
+			the \emph{field normalisation factor} is 1. (Note that this is
+			different from 2DBOpera and 2DBOperaXY options).\\
+		{\bf 2DB, 2DE} -- magnetic or electric field specified in $R$ and $z$
+			coordinate system.  The first line of the file has to contain
+			the information about \emph{nR,  nz, length unit} and 
+			\emph{field normalisation factor}. The compact form of the field
+			map (see 3DB case) is not supported.
+			The next few lines of the field map file beginning with
+			the character ``\%'' are comments.
+			The following lines specify the \emph{R, z, Field\_R} \emph{Field\_z}
+			values.\\
+		{\bf 2DBOpera} -- 2D magnetic field in the form of OPERA output.
+			It is expected that the \emph{length unit} is 1\,cm, and
+			the \emph{field normalisation factor} is 0.00001 (Note that this is
+			different from 3DBOpera option).
+			The data in the field map OPERA file are ordered as
+			\emph{R, dummy, z, Field\_R, Field\_z, dummy}\\
+		{\bf 2DBOperaXY} -- same as 2DBOpera except that the 
+			data in the field map OPERA file are ordered as
+			\emph{R, z, dummy, Field\_R, Field\_z, dummy}\\
+	   \item \emph{fieldInputFileName} (string) -- Name of the field map file.
+	   \item \emph{fieldValue} (float) -- the value of the field at some reference point
+		(usually in the centre of the field).  It serves as some multiplicative
+		factor.  The units are tesla for the magnetic field and  kV/mm
+		for the electric field.
+	   \item \emph{[fieldValueFinal]} and \emph{[fieldNrOfSteps]} (floats) 
+		-- these optional parameters allow the user to ramp up (down) the field
+		during a single run.  The \emph{fieldValue} serves as the initial field value,
+		the \emph{[fieldValueFinal]} is the final value and \emph{[fieldNrOfSteps]}
+		specifies number of steps, in which the rump up/down will happen.
+	\end{itemize}
+
+\item{\bf /musr/command globalfield \emph{fieldName} \emph{X} \emph{Y} \emph{Z} quadrupole
+	\emph{halfLength} \emph{fieldRadius} \emph{fringeFactor} \emph{logicalVolume} 
+	\emph{gradientValue} \emph{[gradientValueFinal]} \emph{[gradientNrOfSteps]} }\\
+	Set up the field of a quadrupole magnet including the Enge function approximation of the
+	fringe fields.  The description is similar to the uniform field and to the tabulated fields.
+	See ``musrDetectorConstruction.cc'' and ``BLEngeFunction.hh'' for the details.
+
+\item{\bf /musr/command globalfield setparameter \emph{parameterName} \emph{parameterValue} }\\
+	Set up some parameters used internally by Geant4 when calculating the motion
+	of charged particles in the magnetic field.\\
+	\emph{parameterName} (string) -- one of the following parameters: ``SetDeltaIntersection''
+	``SetDeltaOneStep'', ``SetMinimumEpsilonStep'', ``SetMaximumEpsilonStep'',
+	``SetLargestAcceptableStep'' and ``SetMaxLoopCount''.  The exact meaning of
+	these parameters can be found in Geant4 manual.
+
+\item{\bf /musr/command globalfield printparameters} \\
+	Print out the accuracy parameters (see ``/musr/command globalfield setparameter'').
+
+\item{\bf /musr/command globalfield printFieldValueAtPoint \emph{x} \emph{y} \emph{z}} \\
+	Print out the field value at the point $(x, y, z)$ (given in the global 
+	coordinate system.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Physics processes}
+
+\begin{description}
+\item{\bf /musr/command process addDiscreteProcess \emph{particle} \emph{process}}\\
+{\bf /musr/command process addProcess \emph{particle} \emph{process} \emph{ordAtRestDoIt} \emph{ordAlongSteptDoIt} \emph{ordPostStepDoIt}}\\
+	Adds processes for particles. \\
+	\emph{particle} (string) -- name of the particle to which a process is applied.\\
+	\emph{process} (string) -- name of the process to be assigned.\\
+	\emph{ordAtRestDoIt, ordAlongSteptDoIt, ordPostStepDoIt} (int) -- priority switches.\\
+	See the file musrPhysicsList.cc for the list of defined processes (e.g. G4MultipleScattering,
+	G4eIonisation, ...) and Geant4 manual for the detail description of the processes.
+
+	There is one special process, combined from G4MultipleScattering and G4CoulombScattering,
+	defined by the following command:\\
+{\bf /musr/command process addProcess  \emph{particle} MultipleAndCoulombScattering \emph{ordAtRestDoIt} \emph{ordAlongSteptDoIt} \emph{ordPostStepDoIt} \emph{G4Region1}  [\emph{G4Region2}]  [\emph{G4Region3}]}\\
+	The G4MultipleScattering (rough but very fast approximation of scattering) will be applied
+	elsewhere in the detector, except for the \emph{G4Region1} (and eventually \emph{G4Region2}
+	and \emph{G4Region3}), where more precise but very slow process G4CoulombScattering
+	will be applied instead of G4MultipleScattering.  Note that up to three
+	G4Regions are supported at the moment, but this limitation is not intrinsic to {\sc Geant4}
+	and it can be therefore changed in musrPhysicsList.cc, if needed.  The G4Regions have to
+	be defined in the detector construction phase by the command ``/musr/command region define ...''.
+
+\end{description}
+
+%=============================================================================================
+\section{Initial (muon) beam parameters}
+
+\begin{description}
+\item{\bf /gun/primaryparticle \emph{primaryParticleName}}\\
+        (default: /gun/primaryparticle mu+)\\
+	Set the primary particle type, if it is not positive muon.  For example, the negative muons
+	are specified by ``/gun/primaryparticle mu-''.
+
+\item{\bf /gun/vertex \emph{x0} \emph{y0} \emph{z0} \emph{unit}}\\
+	(default: /gun/vertex 0 0 -100 mm) \\
+	Set mean values of the $x$, $y$ and $z$ coordinates of the generated particles (muons).
+	The smearing around these mean values instead is set by /gun/vertexsigma and
+        restricted by /gun/vertexboundary (see below).\\
+	(Applicable also to TURTLE input).
+
+\item{\bf /gun/vertexsigma \emph{xSigma} \emph{ySigma} \emph{zSigma} \emph{unit}}\\
+	(default: /gun/vertexsigma 0 0 0 mm) \\
+	If {\it xSigma} $>0$ ...  set $\sigma$, i.e. the standard deviation (RMS), of the $x$ coordinate
+	of the generated particles (muons) to $\sigma=xSigma$. The $x$ coordinate of the initial
+        muon is then generated according to the Gaussian distribution with the mean value of $x0$
+	and the standard deviation of {\it xSigma}. \\
+	If {\it xSigma} $<0$ ... the $x$ coordinate of the initial
+        muon is generated {\bf uniformly} in the interval of ($x0-$ {\it xSigma}, $x0+$ {\it xSigma}).\\
+	If {\it xSigma} $= 0$ ... no smearing on the $x$ coordinate is applied.\\
+	Similar is true for {\it ySigma} and {\it zSigma}. \\
+	(Ignored by the TURTLE input).	
+
+\item{\bf /gun/starttime \emph{t0} \emph{unit}}\\
+	By default, muons are generated at time = 0.  The time of generation of muons can be
+        set randomly according to the Gaussian or uniform distribution using variables
+	``/gun/starttime'' and ``/gun/starttimesigma''.  See the description of the
+	``/gun/vertexsigma'' to understand how the choice is done.
+
+\item{\bf /gun/starttimesigma \emph{t0} \emph{unit}}\\
+	See the description of ``/gun/starttime'' command.
+
+\item{\bf /gun/vertexboundary \emph{R\_max} \emph{z\_min} \emph{z\_max} \emph{unit}}\\
+	Set maximum allowed radius, and minimum and maximum z coordinate of the generated particles (muons).
+	This command might be useful especially if the user wants to restrict the
+	area, in which initial particles are created, e.g.\ to force the initial muons
+        to be created inside the beam pipe.
+
+	If the particles (muons) are read in from an external TURTLE file, 
+	only the restriction on the maximum radius \emph{R\_max}
+	is applied on the initial particles, while \emph{z\_min} and \emph{z\_max} are ignored.
+
+\item{\bf /gun/kenergy \emph{kineticEnergy} \emph{unit}}\\
+	Set the mean kinetic energy of the initial particles (muons).\\
+	(Ignored by the TURTLE input).	
+
+\item{\bf /gun/momentum \emph{momentum} \emph{unit}}\\
+	Set the mean momentum of the initial particles (muons).\\
+	(Ignored by the TURTLE input).	
+
+\item{\bf /gun/momentumsmearing  \emph{momentumSigma} \emph{unit}}\\
+	Set $\sigma$, i.e. the standard deviation (RMS), of the momentum spread, which
+        is applied randomly to each generated initial particle (muon). It is the magnitude
+	of the momentum, which is smeared. \\
+	(Ignored by the TURTLE input.  However,
+	a similar command ``/gun/turtleMomentumBite'' can be used for the TURTLE input file.)
+
+\item{\bf /gun/momentumboundary \emph{p\_min} \emph{p\_max} \emph{dummy} \emph{unit}}\\
+	Set a boundary for the minimum and maximum momentum of the initial particles (muons).
+	The third argument \emph{dummy} is ignored.\\
+	(Presently ignored by the TURTLE input).
+
+\item{\bf /gun/tilt \emph{xangle0} \emph{yangle0} \emph{dummy} \emph{unit}}\\
+	The ``beam tilt'' is understood as a constant angle tilt that is applied to
+	all initial particles (muons) regardless on their distance from the centre of the beam.\\
+	(Applicable also to TURTLE input).
+
+\item{\bf /gun/tiltsigma \emph{xangleSigma} \emph{yangleSigma} \emph{dummy} \emph{unit}}\\
+	Gaussian smearing of the tilt angle.\\
+	(Presently ignored by the TURTLE input).
+
+\item{\bf /gun/pitch \emph{pitch} \emph{unit}}\\
+	The ``beam pitch'' is understood as a variable angle applied to the initial particles
+        (muons), which is directly proportional to the distance from the beam axis.
+	The particles closer to the beam axis become smaller pitch than particles further away
+	from the beam axis.  
+	The angle given as \emph{pitch} will be applied to a particle generated 1\,mm away from the
+	beam centre, i.e. the particle generated 7\,mm away from the beam axis will be assigned
+        the angle of $7\cdot pitch$.
+	The pitch allows the user to focus or defocus the initial particle
+	beam. Particles will be focused for positive pitch and defocused for the negative pitch.\\
+	(Applicable also to TURTLE input).
+
+\item{\bf /gun/muonPolarizVector \emph{xpolaris} \emph{ypolaris} \emph{zpolaris}}\\
+	Set polarisation of the initial particle (muon) in a form of a vector 
+	$P=(xpolaris,ypolaris,zpolaris)$.  The polarisation vector does not have to be normalised,
+	the normalisation will be done internally by the program.
+	However note that if the magnitude of P is set to less than 1e-8, the user can 
+	achieve an unpolarised muon beam.  See the source code of musrPrimaryGeneratorAction.cc
+	if you need to use unpolarised beam by this parameter, because there is some trick
+        based on the magnitude of P.\\
+	(Applicable also to TURTLE input).
+
+\item{\bf /gun/muonPolarizFraction \emph{polarisFraction}}\\
+	Set the fraction of the muon polarisation. The variable \emph{polarisFraction}
+	has to be set in the range of -1 to 1.  \\
+	If \emph{polarisFraction} is set to 1,  all muons are polarised in the direction 
+	of polarisation vector defined by ``/gun/muonPolarizVector''.\\
+	If \emph{polarisFraction} is set to 0,  half of the muons are polarised in the direction 
+	of polarisation vector, the second half is polarised in the opposite direction, so
+	in the end the muon beam should act as unpolarised.\\
+	If \emph{polarisFraction} is set to -1,  all muons are polarised in the direction 
+	opposite to the polarisation vector.\\
+	{\bf If \emph{polarisFraction} is set to 0.9, then 95\% of the muons is polarised
+	in in the direction of polarisation vector, and 5\% of them is polarised in the 
+	opposite direction!}.\\
+	{\bf This command is ignored if magnitude of polarisation vector defined by
+	``/gun/muonPolarizVector'' is smaller than 1e-8!} \\
+	(Applicable also to TURTLE input).
+
+\item{\bf /gun/decaytimelimits \emph{muDecayTimeMin} \emph{muDecayTimeMax} \emph{muMeanLife} \emph{unit}}\\
+	(default: /gun/decaytimelimits $-1$ $-1$ 2197.03\,ns ) \\
+	If {\it muDecayTimeMax} is less or equal to zero, this command is ignored,
+	and the muon decay time is set internally by {\sc Geant4}.
+	Otherwise the muon will be forced to decay within a time interval given by
+	{\it muDecayTimeMin} and {\it muDecayTimeMax}, and the mean muon lifetime will
+	be set to {\it muMeanLife}.  In such case {\it muDecayTimeMin}
+	has to be equal or larger than 0 and {\it muDecayTimeMax} has to be
+	larger {\bf or equal} to {\it muDecayTimeMin}.\\
+	(Applicable also to TURTLE input).
+
+\item{\bf /gun/turtlefilename \emph{turtleFileName}}\\
+	Set the filename of the TURTLE input file.  If this variable is set, TURTLE file 
+        will be used to initiate muons.  Otherwise the muons would be generated randomly.
+	If the end of the TURTLE file is reached (because the user requested to simulate
+	more events than saved in the TURTLE file), the TURTLE file be be rewind to its
+	beginning.  Note that this does not mean that the same events will be simulated
+	after the rewind, because the random seed will be set differently than at the
+	beginning of the simulation.  Note that the muons initialised
+	at the same position and with the same momentum will have completely different
+	(random) multiple scattering, penetration depths, decay times,
+	decay positron energies and angles, ..., and therefore will be (almost completely) 
+	different events not affecting the statistical quality of the sample.
+
+\item{\bf /gun/turtleZ0position  \emph{z0\_InitialTurtle}  \emph{unit}}\\
+	Set the z-position which has been used to generate the TURTLE file.\\
+	If this value differs from the $z0$ value of the ``/gun/vertex'' command,
+	than the particle initial position is extrapolated from $z0\_InitialTurtle$ 
+	to the point corresponding to $z0$, using the direction of its momenta.\\
+	MORE DETAILS:\\
+	When running TURTLE (e.g. when generating the TURTLE file using the TURTLE program),
+	the user has to specify the $z$ position, at which the TURTLE particles (muons) would be exported.
+	Sometimes this $z$ position does not correspond to the point of origin of the musrSim
+	geometry.  In such case, the variable \emph{z0\_InitialTurtle} should be set to the
+	value, that in musrSim coordinate system corresponds to the point, at which the TURTLE
+	file was exported.  For example -- if the TURTLE file was exported just after the last
+	quadrupole of a beam-pipe, and in the simulation the edge of the last quadrupole corresponds
+	to 100\,cm, than the \emph{z0\_InitialTurtle} should be also set to 100\,cm.\\
+	
+\item{\bf /gun/turtleMomentumBite \emph{turtleMomentumP0} \emph{turtleSmearingFactor} \emph{dummy} }\\
+	Modify the smearing of the momentum bite specified in the TURTLE input file.  
+	Normally the muon momentum is defined already in the TURTLE input file.  This command allows the user
+	to modify the momentum smearing (momentum bite) of the muon beam.
+	The variable \emph{turtleMomentumP0} will be taken as the mean momentum (in MeV/c), around which
+	the momentum will be increased/decreased. It does not have to be the real mean value of the initial muon momentum distribution.
+        The variable \emph{turtleSmearingFactor} is the smearing factor in per cent, by which the momentum bite
+	will be increased/decreased around the \emph{turtleMomentumP0}.  The following equation is used to change the
+	muon momentum: $p_{new}$ = {\it turtleMomentumP0} - ({\it turtleMomentumP0}-$p_{TURTLE}$)$\cdot$0.01$\cdot${\it turtleSmearingFactor}.\\
+	This means that:\\
+	{\it turtleSmearingFactor} = 100 ... the muon beam momentum will not be modified.\\
+	{\it turtleSmearingFactor} = 0 ~~... the muon beam momentum will be set to the constant value of {\it turtleMomentumP0}.\\
+	{\it turtleSmearingFactor} = 200 ... the muon beam will have two times broader distribution compared to the original TURTLE file.
+
+\item{\bf /gun/turtleFirstEventNr \emph{lineNumberOfTurtleFile} }\\
+	Set the line number that should be taken as the first event from the TURTLE input file.
+	This option is needed when the user wants to reproduce the simulation of an event
+        using the same random number generator and TURTLE initial particle as in some previous
+        run, however he wants to skip some (uninteresting) events at the beginning of the simulation.
+
+\item{\bf /gps/*} \\
+	In most cases, musrSim uses the so called ``G4ParticleGun'' to generate the primary
+	particles (muons).  The commands for G4ParticleGun were summarised previously, 
+	they start with /gun/ keyword.\\
+	However, there is an alternative particle generator
+	called ``GPS (General Particle Source)'', which is useful when simulating
+	the decays of radioactive atoms and for other purposes.
+	Whenever the /gps/ keyword is used, the ``G4ParticleGun'' is not initiated
+	(and all /gun/* commands are ignored).
+	The description of GPS can be found on the web, some of the useful commands are:\\
+	/gps/particle ion\\
+	/gps/ion 38 90 0 0\\
+	/gps/position 0 0 0\\
+	/gps/energy 0 keV\\
+	/gps/ang/maxtheta 2 deg\\
+	/gps/ang/maxphi 2 deg\\
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Some other parameters}
+%
+\begin{description}
+\item{\bf /run/beamOn \emph{nrOfEvents}}\\
+	Specify how many events will be simulated in this run/job.\\
+	\emph{nrOfEvents} (int) -- number of events to be simulated.\\
+	(This is a default Geant4 command, which has to be specified in any simulation run).
+
+\item{\bf /musr/command logicalVolumeToBeReweighted mu \emph{logicalVolume} \emph{weight} }\\
+	(default: not defined; no reweighting is done unless explicitly requested by this command.) \\
+	Events can be reweighted by this command.  If muon {\bf stops and decays} in the
+	volume \emph{logicalVolume}, the event will be reweighted using the requested \emph{weight}.  
+	Namely, only each $n^{th}$ event will be stored in the output Root tree ($n=$\emph{weight})
+	with the Root tree output variable 
+	``weight'' set to \emph{weight}, while other (non-$n^{th}$) events
+	will be aborted. (The decision which event is to be stored and which to be aborted is
+	done at random).  This reweighting might be useful in the cases when the user wants to speed-up the
+	simulation (respectively to reduce the number of fully simulated events), while keeping
+	the high number of events interesting for the analysis.  For example, one can set
+	the reweighting of events in which muons stop in the collimator.  The user should then
+	use the \emph{weight} stored in the Root tree when analysing the simulated data (i.e. when 
+	filling histograms).  
+	Compared to the simulation with no weighting applied, the histograms with weighted events
+	will have larger errors, but the distributions should not differ more then within the
+	statistical errors.\\
+	Note that the \emph{weight} parameter is integer, and ``mu'' stands for ``muons''
+	(at the moment reweighting based on electrons or positrons is not supported).
+
+\item{\bf /musr/command SetUserLimits \emph{logicalVolume} \emph{ustepMax} \emph{utrakMax} \emph{utimeMax} \emph{uekinMin} \emph{urangMin}}\\
+	Set the so-called user limits (G4UserLimits) in a volume  \emph{logicalVolume}.
+	The five last parameters correspond to the Geant4 methods
+	``SetMaxAllowedStep'', ``SetUserMaxTrackLength'', ``SetUserMaxTime'',
+	``SetUserMinEkine'' and ``SetUserMinRange''.
+	{\bf NOTE THAT  G4StepLimiter AND/OR G4UserSpecialCuts HAS TO BE DEFINED FOR THE
+	REQUIRED PARTICLE TYPES BEFORE CALLING THIS COMMAND!}\\
+	(E.g.:\ ``/musr/command process addProcess        mu+   G4StepLimiter      -1 -1 5'')\\
+	See chapter ``5.7.  User Limits'' (namely ``5.7.2.  Processes co-working with G4UserLimits'')
+	of the Geant User Manual for more details about this issue.
+
+	The user can set G4UserLimits to logical volume and/or to a region.
+	{\bf At the moment, ``/musr/command SetUserLimits'' in musrSim supports the G4UserLimits
+	in logical volumes only, not in the G4Regions.}
+	User limits assigned to logical volume do not propagate to daughter volumes, 
+	while User limits assigned to region propagate to daughter volumes unless 
+	daughters belong to another region. If both logical volume and associated 
+	region have user limits, those of logical volume win.
+
+
+\item{\bf /musr/command storeOnlyEventsWithHits false}\\
+	By default, only the events in which at least one hit in an active
+	volume (detector) has been recorded are saved to the output Root tree,
+	because the events with no hit in any detector will anyway not contribute
+	to the real measurement (even not to the pileup background).
+	However, the user has a possibility to use this command
+	to store all events for some technical study, e.g. to learn where
+	the muons stop in collimators, etc.
+
+\item{\bf /musr/command storeOnlyEventsWithHitInDetID \emph{volumeID}}\\
+	This command is similar to the previous one.  Only the events,
+	in which there was at least one hit in the volume with the
+	\emph{volumeID} will be saved into the output Root tree.
+	This command might be useful in some technical studies, it might
+	introduce some bias in a physics study.
+
+\item{\bf /musr/command storeOnlyTheFirstTimeHit true}\\
+	This command specifies that only the hit that happens first will be
+	saved, while all the other hits will be ignored.
+	This command might be useful in some technical studies, it would
+	be harmful in most physics studies.
+
+\item{\bf /musr/command killAllPositrons true}\\
+	It might be useful in some technical studies to abandon all positron
+	tracks (to ignore all positrons).  For example if the user wants
+	to study where the muon hit detectors and where do they stop and
+	decay, this command might help him to get rid of all hits
+	caused by the decay positron.  This command would be
+	harmful in most physics studies.
+
+\item{\bf /musr/command killAllGammas true}\\
+	See ``/musr/command killAllPositrons true'' for the explanation.
+
+\item{\bf /musr/command killAllNeutrinos false}\\
+	By default the neutrino tracks are ``killed'' in the musrSim to
+	speed up the simulation, because
+	the neutrinos anyway do not interact with the detectors.
+	(This ``killing'' of neutrinos does not affect the muon decay in
+	any way).
+	However, it might be useful not to kill the neutrinos when the
+	user wants to display the complete muon decay event.
+	This command allows one not to kill the neutrinos.
+
+\item{\bf /musr/command getDetectorMass \emph{logicalVolume}}\\
+	This command prints out the mass of a given volume (detector)
+	including all its daughter volumes (components).
+
+\item{\bf /musr/command signalSeparationTime \emph{timeSeparation}}\\
+	There is some time for each detectors, during which it can not distinguish
+	two subsequent hits.  The command mimics such feature.
+	If there are two energy deposits that happen in the same
+	active volume (detector) within the time \emph{timeSeparation}
+	(in ns), then these two energy deposits are summed up into
+	a single hit.  Otherwise they will form two different hits.
+	This is true regardless on whether the two energy deposits were
+	induced by the same particle or by different particles.
+	Presently the parameter \emph{timeSeparation} is common to all
+	scintillator detectors in the system, which means it is not
+	possible to set different \emph{timeSeparation} for a slow
+	and fast scintillator detectors of the instrument.
+
+\item{\bf /musr/command maximumRunTimeAllowed \emph{timeMax}}\\
+	If a musrSim job is run on a pc farm with a time limit on the job execution,
+	and the job exceeds the time limit, the simulation will be killed.
+	The output Root tree will be not closed properly, and the
+	information stored in the Root vector ``geantParametersD''
+	will be not saved.  To avoid the hard abort,
+	the job will be terminated gently if its physical execution time
+	exceeds \emph{timeMax}.  
+	Note that the units of \emph{timeMax} are seconds,
+	and the default value is set to 85000\,s (23\,hours, 37\,minutes).
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Output root tree variables}
+The value of -999 or -1000 indicates that the given variable could not be filled
+(was undefined in a given event).
+For example if the variable ``muTargetTime'' is set to -1000 it means that the initial muon missed the sample, 
+and therefore no time can be assigned to the sample hit.
+
+The user can choose which variables should not be stored in the output file using the command
+\begin{description}
+\item{\bf /musr/command rootOutput \emph{variableName} off} \\
+	The \emph{variableName} is identical with the variable names stored in the Root tree
+	(see below).  Presently the exception is ``save'' volume, for which all variables
+	will be stored in the Root tree, if such a ``save'' volume is requested.
+	Another exception are the Root tree variables ``nFieldNomVal'' and ``fieldNomVal[nFieldNomVal]'',
+	which are both suppressed using the keyword ``fieldNomVal''.
+	The last exceptions are the variables ``fieldIntegralBx'',
+	``fieldIntegralBy'', ``fieldIntegralBz'', ``fieldIntegralBz1'', 
+	``fieldIntegralBz2'', ``fieldIntegralBz3'', which are usually not required
+	in an analysis program, and they are therefore not written out to the Root tree by default.  
+	This can be changed using the command ``/musr/command rootOutput \emph{variableName} on''.
+\end{description}
+
+The list of variables that can be stored in the Root tree:
+\begin{description}
+\item{\bf runID} (Int\_t) -- run ID number.        
+\item{\bf eventID} (Int\_t) -- event ID number.
+\item{\bf weight} (Double\_t) -- event weight.
+\item{\bf BFieldAtDecay\_Bx, BFieldAtDecay\_By, BFieldAtDecay\_Bz, BFieldAtDecay\_B3, BFieldAtDecay\_B4, BFieldAtDecay\_B5} (Double\_t) --
+	value of the 6 coordinates of the electromagnetic field at the position and time where and when the muon decayed.
+        The first three coordinates correspond to the magnetic field (in tesla), the last three to the electric field
+	(in kV/mm).
+\item{\bf muIniTime} (Double\_t) -- time when the initial muon was generated (in $\mu$s).
+\item{\bf muIniPosX, muIniPosY, muIniPosZ}  (Double\_t) -- initial position where muon was generated (in mm).
+\item{\bf muIniMomX, muIniMomY, muIniMomZ}  (Double\_t) -- initial momentum of the muon when it was generated (in MeV/c).
+\item{\bf muIniPolX, muIniPolY, muIniPolZ}  (Double\_t) -- initial polarisation of the muon when it was generated.
+\item{\bf muDecayDetID} (Int\_t) -- ID number of the detector in which the muon stopped and decayed.
+\item{\bf muDecayTime} (Double\_t) -- the time at which the muon stopped and decayed (in $\mu$s).
+\item{\bf muDecayPosX, muDecayPosY, muDecayPosZ}  (Double\_t) -- the position where the muon stopped and decayed (in mm).
+\item{\bf muDecayPolX, muDecayPolY, muDecayPolZ}  (Double\_t) -- polarisation of the muon when it stopped and decayed.
+\item{\bf muTargetTime}  (Double\_t) -- time at which the muon entered the volume whose name starts by ``target'' -- usually the sample (in $\mu$s).
+\item{\bf muTargetPolX, muTargetPolY, muTargetPolZ} (Double\_t) -- polarisation of the muon when it entered the volume whose name starts with ``target'' -- usually the sample.
+\item{\bf muM0Time}  (Double\_t) -- time at which the muon entered the detector called ``M0'' or ``m0'' (in $\mu$s).
+\item{\bf muM0PolX, muM0PolY, muM0PolZ}  (Double\_t) -- polarisation of the muon when it entered the detector called ``M0'' or ``m0''.
+\item{\bf muM1Time}  (Double\_t) -- time at which the muon entered the detector called ``M1'' or ``m1'' (in $\mu$s).
+\item{\bf muM1PolX, muM1PolY, muM1PolZ}  (Double\_t) -- polarisation of the muon when it entered the detector called ``M1'' or ``m1''.
+\item{\bf muM2Time}  (Double\_t) -- time at which the muon entered the detector called ``M2'' or ``m2'' (in $\mu$s).
+\item{\bf muM2PolX, muM2PolY, muM2PolZ}  (Double\_t) -- polarisation of the muon when it entered the detector called ``M2'' or ``m2''.
+\item{\bf posIniMomX,   posIniMomY, posIniMomZ}  (Double\_t) -- Initial momentum of the decay positron (in MeV/c).
+\item{\bf nFieldNomVal} (Int\_t) -- number of the elementary fields that make together the global field.
+\item{\bf fieldNomVal[nFieldNomVal]} (array of Double\_t) -- nominal values of all elementary fields.  
+	(They are usually constant, but sometimes they may vary from event to event).
+\item{\bf BxIntegral, ByIntegral, BzIntegral, BzIntegral1, BzIntegral2, BzIntegral3} (Double\_t) --
+	calculates the field integrals along the muon path and path lengths defined as
+	\begin{eqnarray}
+	\mathrm{BxIntegral} & = & \int_{\mu\ \mathrm{path}} B_x(s)\, ds  \\
+	\mathrm{ByIntegral} & = & \int_{\mu\ \mathrm{path}} B_y(s)\, ds  \\
+	\mathrm{BzIntegral} & = & \int_{\mu\ \mathrm{path}} B_z(s)\, ds  \\
+        \mathrm{BzIntegral1} & = & \int_{Z_0}^{Z_{decay}} B_z(z)\, dz  \\
+	\mathrm{BzIntegral2} & = & \int_{\mu\ \mathrm{path}} ds  \\
+        \mathrm{BzIntegral3} & = & \int_{Z_0}^{Z_{decay}} dz  
+	\end{eqnarray}
+	The units are tesla$\cdot$m (for the first four variables) and mm (for the last two variables).
+	To calculate the integrals properly, the user must force Geant to use very small step size
+ 	(e.g.\ by using something like ``/musr/command globalfield setparameter SetLargestAcceptableStep 2''),
+	and probably also to generate the muons well outside the magnetic field and put target such
+	that muons stop at $z=0$.
+
+	Note that these variables are by default not calculated (and not stored) and therefore the user has
+	to switch the calculation on by ``/musr/command rootOutput fieldIntegralBx on'' in the macro file.
+
+\item{\bf det\_n} (Int\_t) -- number of ``detector hits'' in this event.  Note that more then 1 detector
+        might be hit, and even the same detector might be hit more than once.  The hit might be induced by just one
+        particle, by more then one particle originating from the same particle initially hitting the detector, 
+	or from more ``independent'' particles.
+    	For example, the decay positron can emit an Bremsstrahlung photon in the sample and then both the Bremsstrahlung
+	photon and positron hit the same positron counter at approximately the same time.
+\item{\bf det\_ID[det\_n]} (array of Int\_t) -- ID number of the detector where the given hit occurred.
+\item{\bf det\_edep[det\_n]} (array of Double\_t) -- energy deposited in the given hit (in MeV).
+\item{\bf det\_edep\_el[det\_n]} (array of  Double\_t) -- energy deposited in the given hit due to electron-based interactions (in MeV).
+\item{\bf det\_edep\_pos[det\_n]} (array of Double\_t) -- energy deposited in the given hit due to positron-based interactions (in MeV).
+\item{\bf det\_edep\_gam[det\_n]} (array of Double\_t) -- energy deposited in the given hit due to photon-based interactions (in MeV).
+\item{\bf det\_edep\_mup[det\_n]} (array of Double\_t) -- energy deposited in the given hit due to muon-based interactions (in MeV).
+\item{\bf det\_nsteps[det\_n]} (array of Int\_t) -- number of ``steps'' (in {\sc Geant4} terminology) that were 
+	integrated together in the given hit. (The det\_edep[] energy is the sum of the energy deposits during all these steps).
+\item{\bf det\_length[det\_n]} (array of Double\_t) -- the length of the trajectory of the particle (particles) that contributed to
+        the given hit (in mm).
+\item{\bf det\_time\_start[det\_n], det\_time\_end[det\_n]} (array of Double\_t) -- the initial and final time belonging of the hit.
+	It should be the ``global time'' of the track when the first and last hit occurred (in $\mu$s).
+\item{\bf det\_x[det\_n], det\_y[det\_n], det\_z[det\_n]} (array of Double\_t) -- the coordinates of the first step of the given hit.
+\item{\bf det\_kine[det\_n]} (array of Double\_t) -- should be kinetic energy of the first particle contributing 
+	to the hit, but it is not clear how to interpret this variable, so check the
+	code for the exact meaning (in MeV).
+\item{\bf det\_Vrtx*****[det\_n]} -- All the variables starting with ``det\_Vrtx'' refer to the particle with the first (in time) energy deposit
+         belonging to the given hit.  (Note that the hit might be induced by more than one particle.)  The vertex, at which
+         the particle was created, may or may not be positioned within the sensitive volume, in which the hit is observed.
+\item{\bf det\_VrtxKine[det\_n]} (array of Double\_t) -- the kinetic energy of the first (in time) particle belonging to the hit.
+\item{\bf det\_VrtxX[det\_n], det\_VrtxY[det\_n], det\_VrtxZ[det\_n]}  (array of Double\_t) -- the position of the vertex of
+	the first particle that belongs to the given hit (in mm). 
+\item{\bf det\_VrtxVolID[det\_n]} (array of Int\_t) -- ID of the detector in which the vertex (see above) was created.
+\item{\bf det\_VrtxProcID[det\_n]} (array of Int\_t) -- ID of the physics process in which the vertex (see above) was created.
+\item{\bf det\_VrtxTrackID[det\_n]} (array of Int\_t) -- track ID of the first particle that belongs to the given hit.
+	If the track ID is negative, there were more than just one track contributing to this hit.  The absolute value
+        of det\_VrtxTrackID[det\_n] corresponds to the first (in time) track.
+\item{\bf det\_VrtxParticleID[det\_n]} (array of Int\_t) -- particle ID of the first particle that belongs to the given hit.
+\item{\bf det\_Vvv*****[det\_n]} -- similar to the variables det\_Vrtx*****[det\_n] above, but if the first particle 
+	belonging to the hit was created inside of the logical volume where the hit occurs, then it's track is followed
+        to its mother track (even several times) until the track (particle) is found that has been created outside the
+        given volume.  This way one can better investigate which (hopefully) single particle caused the hit.  Even though
+        even in this case it is not guaranteed that only a single particle gave origin to the hit, it is quite likely, though, 
+	that it was in fact just a single particle.  If the 
+\item{\bf save\_n} (Int\_t) -- number of special kind of ``save'' volume that were hit in this event. The ``save volume'' is
+	any volume whose name starts with letters ``save''.  Their purpose in the simulation is usually to check positions
+        and momenta of particles at some position of the detector, even if the particle does not deposit any energy in
+        the given ``save'' volume.  Save volumes can therefore be made of vacuum.
+\item{\bf save\_detID[save\_n]} (array of Int\_t) --  ID number of the save volume.
+\item{\bf save\_particleID[save\_n]} (array of Int\_t) -- particle ID of the particle that entered the save volume.
+\item{\bf save\_x[save\_n], save\_y[save\_n], save\_z[save\_n]} (array of Double\_t) -- position of the particle where it
+        entered the save volume (``GetPreStepPoint()'') (in mm).
+\item{\bf save\_px[save\_n], save\_py[save\_n], save\_pz[save\_n]} (array of Double\_t) -- momentum of the particle when it
+        entered the save volume (in MeV/c). 
+\item{\bf save\_ke[save\_n]} (array of Double\_t) -- kinetic energy of the particle when it
+        entered the save volume (in MeV). 
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Visualisation}
+
+\begin{description}
+\item{\bf /musr/command visattributes \emph{volumeName} \emph{colour}}\\
+     {\bf /musr/command visattributes \emph{materialName} \emph{colour}}\\
+	In case of visualisation,	
+	one can set the colour of a logical volume \emph{volumeName} or of all volumes made
+	of the material with the name \emph{materialName}.  The distinction between the
+	two options is by the first four letters of the \emph{volumeName} -- if it contains
+	the string ``log\_'', it is considered as \emph{volumeName}, otherwise it is
+	considered to be a material with \emph{materialName}.
+
+	Presently the following colours are predefined: ``invisible'', ``white'', ``black'', 
+	``red'', ``darkred'', ``green'', 
+	``blue'', ``lightblue'', ``darkblue'', ``blue\_style'', ``fblue\_style'',
+	``yellow'', ``gray'', ``cyan'', ``magenta'',
+	``oxsteel'', ``MCP\_style'', ``MACOR\_style'', ``SCINT\_style'',
+	``dSCINT\_style'', ``VTBB\_style'', ``Grid\_style'' and ``RA\_style''.
+
+	New colours can be easily added, if needed, in the member function
+	``musrDetectorConstruction::SetColourOfLogicalVolume''.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%
+%\begin{figure}\centering
+%\epsfig{file=pict/HiFi_01.eps,width=\linewidth,%
+%bbllx=56pt,bblly=288pt,bburx=505pt,bbury=555pt,clip=}
+%\caption{The cross-section of the first version of the High Field \musr\ apparatus including
+%an example interaction. Only the inner part of the apparatus is shown.  The picture was generated
+%using GEANT package.}
+%\label{HiFi_01}
+%\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions}
+The ...
+in~\cite{Aktas:2004px}.
+
+\section{Appendix A:  Steering file for the simulation}
+\begin{verbatim}
+# Macro file for seg06.cc
+# set detector parameters 
+# This line fills some space
+# This line fills some space
+/run/beamOn 2
+\end{verbatim}
+
+
+\begin{thebibliography}{0}
+
+\bibitem{Blundel:1999}  S.J.~Blundel,  Contemp. Phys. 40 (1999) 175.
+
+\bibitem{AlexeyTestAPD} A.~Stoykov {\it et al.}, ``First experience with G-APDs in $\mu$SR instrumentation'',
+	NDIP08, to be published in Nucl. Instrum. Meth. A.
+
+\bibitem{geant} S.~Agostinelli, et al., Nucl. Instr. and Meth. A 506 (2003) 250.\\ %-303. \\
+                J.~Allison, et al., IEEE Trans. Nucl.\ Sci.\  53 (2006) 270. %-278.
+\bibitem{root} R.~Brun, F.~Rademakers ``ROOT - An Object Oriented Data Analysis Framework'',
+%Proceedings AIHENP'96 Workshop, Lausanne, Sep. 1996, 
+Nucl. Inst. and Meth. in Phys. Res. A 389 (1997) 81.%-86. 
+See also http://root.cern.ch/.
+
+\bibitem{turtle}
+K.L.~Brown, Ch.~Iselin, D.C.~Carey, {\it``Decay Turtle''}, CERN 74-2 (1974). \\
+U.~Rohrer, {\it ``Compendium of Decay Turtle Enhancements''},
+http://pc532.psi.ch/turtcomp.htm
+
+\bibitem{shirokaGeant} 
+T.~Shiroka {\it et al.} ``GEANT4 as a simulation framework in muSR'',
+Physica {\bf B~404}, (2009) 966-969
+% 
+%\cite{Aktas:2004px}
+\bibitem{Aktas:2004px}
+A.~Aktas {\it et al.}  [H1 Collaboration],
+%``Measurement of dijet production at low Q**2 at HERA,''
+Submitted to Eur.\,Phys.\,J.\,{\bf C}, [hep-ex/0401010].
+%%CITATION = HEP-EX 0401010;%%
+
+
+
+
+\end{thebibliography}
+
+\end{document}

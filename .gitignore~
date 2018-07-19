@@ -1,0 +1,6 @@
+# wrl is heavy
+*.wrl
+
+# tmp folder shold be hidden from public 
+/tmp
+
