@@ -114,11 +114,10 @@
 #==================================================================================================================
 #    Applying fields
 #===================================================================================================================
-#/musr/command globaleld fieldName X Y Z fromfile fieldTableType fieldInputFileName logicalVolume fieldValue [fieldValueFinal] [fieldNrOfSteps]
 ## /musr/command globaleld fieldName half-x half-y half-z uniform X Y Z logicalVolume Bx By Bz Ex Ey Ez
-# /musr/command globalfield TEST_field  100 100 250  uniform 0 0 250 log_MCHvac 0 0.18 0 4.3  0 0 
 ## Uniform EB-field
-# /musr/command globalfield TEST_field  100 100 250  uniform 0 0 0 log_MCHvac 0 0.18 0 4.3  0 0 
+#  /musr/command globalfield TEST_field  100 100 250  uniform 0 0 0 log_MCHvac 0 0.18 0 4.3  0 0 
+## /musr/command globaleld fieldName X Y Z fromfile fieldTableType fieldInputFileName logicalVolume fieldValue [fieldValueFinal] [fieldNrOfSteps]
 ## Real EB-field
 /musr/command globalfield 3DE_field 0 0 0 fromfile 3DE Wien_180621_ver5_3DEOpera_2.map log_MCHvac 1.00
 /musr/command globalfield 3DB_field 0 0 0 fromfile 3DB Wien_180621_ver5_3DBOpera_2.map log_MCHvac 1.00
