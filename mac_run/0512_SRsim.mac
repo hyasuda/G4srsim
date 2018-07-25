@@ -77,13 +77,13 @@
 # MAIN CHAMBER                       Rmin  Rmax  D/2 phi0 phi material     x0 y0 z0     LOGNAME?   norot UNKNOWN 
 #==============================================================================================================
 # /musr/command construct tubs MCH    199.2 203.2 260   0 360 Steel           0 0 0   log_World  norot dead 100
-/musr/command construct tubs MCHvac     0.  200.  500   0 360 G4_Galactic     0 0 0   log_World  norot dead 101
+/musr/command construct tubs MCHvac     0.  100.  500   0 360 G4_Galactic     0 0 0   log_World  norot dead 101
 
 
 #==============================================================================================================
 # BEAM INJECTION POINT                Rmin  Rmax  D/2 phi0 phi material     x0 y0 z0     LOGNAME?   norot UNKNOWN 
 #==============================================================================================================
-/musr/command construct tubs Binj      0.  50.  0.1   0 360 G4_Galactic     0 0 -500   log_World  norot dead 101
+/musr/command construct tubs Binj      0.  10.  0.1   0 360 G4_Galactic     0 0 -500   log_World  norot dead 101
 
 
 # One can set visible attrib. also on a MATERIAL basis, rather than on log_VOL.
@@ -93,8 +93,8 @@
 #==============================================================================================================
 # FIELD APPLYING ZONE                Rmin  Rmax  D/2 phi0 phi material     x0 y0 z0     LOGNAME?   norot UNKNOWN 
 #==============================================================================================================
-/musr/command construct box Fzone_up  50 50 124 G4_Galactic 0 0 -125 log_World norot dead 200
-/musr/command construct box Fzone_down  50 50 124 G4_Galactic 0 0 125 log_World norot dead 200
+/musr/command construct box Fzone_up  50 50 124 G4_Galactic 0 0 -125 log_MCHvac norot dead 200
+/musr/command construct box Fzone_down  50 50 124 G4_Galactic 0 0 125 log_MCHvac norot dead 200
 
 
 # One can set visible attrib. also on a MATERIAL basis, rather than on log_VOL.
@@ -110,17 +110,18 @@
 
 # One can set visible attrib. also on a MATERIAL basis, rather than on log_VOL.
 /musr/command visattributes log_Target  red
+/musr/command visattributes log_save_Target  red
 
 #==================================================================================================================
 #    Applying fields
 #===================================================================================================================
 ## /musr/command globaleld fieldName half-x half-y half-z uniform X Y Z logicalVolume Bx By Bz Ex Ey Ez
 ## Uniform EB-field
-#  /musr/command globalfield TEST_field  100 100 250  uniform 0 0 0 log_MCHvac 0 0.18 0 4.3  0 0 
+/musr/command globalfield TEST_field  100 100 250  uniform 0 0 0 log_MCHvac 0 0.18 0 4.3  0 0 
 ## /musr/command globaleld fieldName X Y Z fromfile fieldTableType fieldInputFileName logicalVolume fieldValue [fieldValueFinal] [fieldNrOfSteps]
 ## Real EB-field
-/musr/command globalfield 3DE_field 0 0 0 fromfile 3DE Wien_180621_ver5_3DEOpera_2.map log_MCHvac 1.00
-/musr/command globalfield 3DB_field 0 0 0 fromfile 3DB Wien_180621_ver5_3DBOpera_2.map log_MCHvac 1.00
+# /musr/command globalfield 3DE_field 0 0 0 fromfile 3DE Wien_180621_ver5_3DEOpera_2.map log_MCHvac 1.00
+# /musr/command globalfield 3DB_field 0 0 0 fromfile 3DB Wien_180621_ver5_3DBOpera_2.map log_MCHvac 1.00
 
 
 
@@ -256,9 +257,9 @@
 
 ## Include Turtle File 
 ### RFQ OUTPUT 
-/gun/turtlefilename rfqll_ttf.dat
-/gun/turtleZ0position -500. mm
-/gun/turtleMomentumBite  0 100 0 
+# /gun/turtlefilename rfqll_ttf.dat
+# /gun/turtleZ0position -500. mm
+# /gun/turtleMomentumBite  0 100 0 
 #*/gun/turtlefilename FOR077_reggiani_Feb2010.dat 
 
 
@@ -274,7 +275,8 @@
 
 
 # A point-like uniform beam
-# /gun/vertexsigma -0.1 -0.1 0 mm
+# /gun/vertexsigma -0.3 -0.3 0 mm
+# /gun/vertexsigma -0.5 -0.5 0 mm
 
 # Set beam transverse spread (default GAUSSIAN spread)
 # If FWHM = 10 mm ==> sigma = 10/2.354 = 4.2481 mm (last 0 is a dummy value)
@@ -284,6 +286,7 @@
 # /gun/vertexsigma  42.5  42.5  0 mm 
 # /gun/vertexsigma   19. 19.  1  mm  # init
 # /gun/vertexsigma  100.  100.  1 mm 
+/gun/vertexsigma  0.3  0.3  0 mm 
 
 #                   Rmax   zmin     zmax
 # /gun/vertexboundary  20.   -845.5    -844.5 mm
@@ -291,9 +294,13 @@
 #*/gun/vertexboundary 7 -1314.4 -1305 mm
 # Without restrictions in z, but only on r:
 #*/gun/vertexboundary 3 -1e6 1e6 mm
+# /gun/vertexboundary 3. -1e6 1e6 mm
+# /gun/vertexboundary 3. -10 10 mm
+# /gun/vertexboundary 3. -500.00001 -499.00001 mm
 
 # /gun/boxboundarycentre  0  0  0   mm
 # /gun/boxboundary        100  100  700 mm 
+
 
 
 # Set beam momentum (USE only as an ALTERNATIVE to setting energy!)
@@ -301,8 +308,10 @@
 # /gun/momentum 0.00003 MeV
 ## RFQ output   : beta = 0.07967##
 # /gun/momentum 8.44465 MeV
+# /gun/momentum 0.0001 0 8.44465 MeV
 ## Design value : beta = 0.08 ##
-/gun/momentum 8.47985 MeV
+# /gun/momentum 8.47985 MeV
+/gun/momentum 0 0 8.47985 MeV
 #*/gun/momentum 0 0  1.8  MeV
 # Energy loss at p = 1.2 MeV/c (E =  6.8 keV) => 1.23 +/- 0.2 keV
 # Energy loss at p = 1.8 MeV/c (E = 15.3 keV) => 1.25 +/- 0.3 keV
@@ -355,5 +364,6 @@
 # BEAM ON
 # /run/beamOn   1
 # /run/beamOn   100
-/run/beamOn   16116	###rfqll_ttf.dat
+/run/beamOn   10000
+# /run/beamOn   16116	###rfqll_ttf.dat
  
