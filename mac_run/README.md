@@ -113,11 +113,28 @@
      - Event 3
 
 #### 0540_SRsim.mac
-     - For test
-     - Using transferd intial beam "rfqll_trans_output.dat"
+     - For test : revise the data file
+     - Using transferd intial beam "rfqll_trans_ttf.dat"
      - Applying uniform field
      - Event full 1000
-	  
+
+#### 0541_SRsim.mac
+     - Modify intial beam using TRACE3D R matrix
+     - Using transferd intial beam "rfqll_trans_ttf.dat"
+     - Applying uniform field
+     - Event full 16,114
+
+#### 0542_SRsim.mac
+     - Modify intial beam using TRACE3D R matrix
+     - modify unit before taking transfer matrix
+     - *Using transferd intial beam "rfqll_trans_01_ttf.dat" :: not used
+     - Using transferd intial beam "rfqll_trans_02_ttf.dat" :: z distribution is same as initial beam
+     - Applying uniform field
+     - Event 1,000
+
+#### 0542_SRsim.mac
+     - Using transferd intial beam "rfqll_trans_02_ttf.dat" :: z distribution is same as initial beam
+     - Event full 16,116
 
 ## map field
    - Using RFQ output given from Otani-san
