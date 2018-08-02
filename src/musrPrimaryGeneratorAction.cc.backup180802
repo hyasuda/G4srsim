@@ -149,11 +149,10 @@ void musrPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	fgets(line,500,fTurtleFile);
       }
       numberOfGeneratedEvents++;
-      // sscanf(&line[0],"%g %g %g %g %g %g %g %d %d",&xTmp,&xAngleTmp,&yTmp,&yAngleTmp,&pTmp,&dummy1,&dummy2,&Ztmp,&Atmp); // comment out by hyasuda
-      sscanf(&line[0],"%g %g %g %g %g %g %g %d %d",&xTmp,&xAngleTmp,&yTmp,&yAngleTmp,&pTmp,&t0,&Ztmp,&Atm); // add by hyasuda
+      sscanf(&line[0],"%g %g %g %g %g %g %g %d %d",&xTmp,&xAngleTmp,&yTmp,&yAngleTmp,&pTmp,&dummy1,&dummy2,&Ztmp,&Atmp);
       if (boolPrintInfoAboutGeneratedParticles) {
 	G4cout<<"musrPrimaryGeneratorAction::GeneratePrimaries:  Turtle input for this event: "
-	      << xTmp << ", " << xAngleTmp << " " << yTmp << " " << yAngleTmp << " " << pTmp << " " << t0 << G4endl; // t0 add by hyasuda
+	      <<xTmp<<", "<<xAngleTmp<<" "<<yTmp<<" "<<yAngleTmp<<" "<< pTmp<<G4endl;
       }
       //cks Implement also alpha and proton particles for the simulation of Juan Pablo Urrego
       if ((Ztmp==1)&&(Atmp==1)) {particleGun->SetParticleDefinition(protonParticle);}// G4cout<<"proton"<<G4endl;}
@@ -162,17 +161,15 @@ void musrPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       else {
 	G4cout<<"musrPrimaryGeneratorAction: Unknown particle requested in the TURTLE input file: Z="
 	      <<Ztmp<<", A="<<Atmp<<G4endl<<"S T O P     F O R C E D" << G4endl;
-	// turtlefile data format : comment by hyasuda //
-	G4cout<<xTmp<<", "<<xAngleTmp<<", "<<yTmp<<", "<<yAngleTmp<<", "<<pTmp<<", "<< t0 << ", " <<dummy1<<", "<<dummy2<<", "<<Ztmp<<", "<<Atmp<<G4endl; // t0 add by hyasuda
+	// turtlefile data format //
+	G4cout<<xTmp<<", "<<xAngleTmp<<", "<<yTmp<<", "<<yAngleTmp<<", "<<pTmp<<", "<<dummy1<<", "<<dummy2<<", "<<Ztmp<<", "<<Atmp<<G4endl;
 	exit(1);
       }
       //csk
       xangle = xAngleTmp*mrad;
       yangle = yAngleTmp*mrad;
-      // x      = xTmp*cm + (z0-z0_InitialTurtle)*tan(xangle) ;       // usually z0 is negative // comment out by hyasuda
-      // y      = yTmp*cm + (z0-z0_InitialTurtle)*tan(yangle) ;       // z0_InitialTurtle is the z0 at whith the turtle file was generated. // comment out by hyasuda
-      x = xTmp*cm ;
-      y = yTmp*cm ;
+      x      = xTmp*cm + (z0-z0_InitialTurtle)*tan(xangle) ;       // usually z0 is negative
+      y      = yTmp*cm + (z0-z0_InitialTurtle)*tan(yangle) ;       // z0_InitialTurtle is the z0 at whith the turtle file was generated.
       p      = pTmp*GeV;
       // add some offset, if requested:
       x      = x + x0;
