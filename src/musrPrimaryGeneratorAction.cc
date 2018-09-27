@@ -139,7 +139,7 @@ void musrPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     char  line[501];  
     G4int checkNrOfCounts=0;
     do {
-      float xTmp, yTmp, xAngleTmp, yAngleTmp, pTmp;
+      float xTmp, yTmp, xAngleTmp, yAngleTmp, pTmp, t0Tmp; // t0Tmp add by hyasuda
       float dummy1, dummy2;
       int Ztmp=-1, Atmp=-1;
       fgets(line,500,fTurtleFile);
@@ -150,10 +150,10 @@ void musrPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       }
       numberOfGeneratedEvents++;
       // sscanf(&line[0],"%g %g %g %g %g %g %g %d %d",&xTmp,&xAngleTmp,&yTmp,&yAngleTmp,&pTmp,&dummy1,&dummy2,&Ztmp,&Atmp); // comment out by hyasuda
-      sscanf(&line[0],"%g %g %g %g %g %g %g %d %d",&xTmp,&xAngleTmp,&yTmp,&yAngleTmp,&pTmp,&t0,&Ztmp,&Atm); // add by hyasuda
+      sscanf(&line[0],"%g %g %g %g %g %g %g %d %d",&xTmp,&xAngleTmp,&yTmp,&yAngleTmp,&pTmp,&t0Tmp,&dummy2,&Ztmp,&Atmp); // add by hyasuda
       if (boolPrintInfoAboutGeneratedParticles) {
 	G4cout<<"musrPrimaryGeneratorAction::GeneratePrimaries:  Turtle input for this event: "
-	      << xTmp << ", " << xAngleTmp << " " << yTmp << " " << yAngleTmp << " " << pTmp << " " << t0 << G4endl; // t0 add by hyasuda
+	      << xTmp << ", " << xAngleTmp << " " << yTmp << " " << yAngleTmp << " " << pTmp << " " << t0Tmp << G4endl; // t0 add by hyasuda
       }
       //cks Implement also alpha and proton particles for the simulation of Juan Pablo Urrego
       if ((Ztmp==1)&&(Atmp==1)) {particleGun->SetParticleDefinition(protonParticle);}// G4cout<<"proton"<<G4endl;}
@@ -163,7 +163,7 @@ void musrPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	G4cout<<"musrPrimaryGeneratorAction: Unknown particle requested in the TURTLE input file: Z="
 	      <<Ztmp<<", A="<<Atmp<<G4endl<<"S T O P     F O R C E D" << G4endl;
 	// turtlefile data format : comment by hyasuda //
-	G4cout<<xTmp<<", "<<xAngleTmp<<", "<<yTmp<<", "<<yAngleTmp<<", "<<pTmp<<", "<< t0 << ", " <<dummy1<<", "<<dummy2<<", "<<Ztmp<<", "<<Atmp<<G4endl; // t0 add by hyasuda
+	G4cout<<xTmp<<", "<<xAngleTmp<<", "<<yTmp<<", "<<yAngleTmp<<", "<<pTmp<<", "<< t0Tmp << ", " <<dummy1<<", "<<dummy2<<", "<<Ztmp<<", "<<Atmp<<G4endl; // t0 add by hyasuda
 	exit(1);
       }
       //csk
@@ -174,6 +174,7 @@ void musrPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       x = xTmp*cm ;
       y = yTmp*cm ;
       p      = pTmp*GeV;
+      t0 = t0Tmp; // add by hyasuda
       // add some offset, if requested:
       x      = x + x0;
       y      = y + y0;
