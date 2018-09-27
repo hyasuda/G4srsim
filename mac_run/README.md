@@ -132,9 +132,49 @@
      - Applying uniform field
      - Event 1,000
 
-#### 0542_SRsim.mac
+#### 0543_SRsim.mac
      - Using transferd intial beam "rfqll_trans_02_ttf.dat" :: z distribution is same as initial beam
      - Event full 16,116
+
+#### 0544_SRsim.mac
+     - Using transferd intial beam "rfqll_trans_03_ttf.dat"
+     - Event 1,000 for test
+
+#### 0545_SRsim.mac
+     - Using transferd intial beam "rfqll_trans_03_ttf.dat"
+     - Event 16,116
+
+#### 0546_SRsim.mac
+     - Using "rfqll_tr_xp.dat" : xp = 0
+     - Event 16,116
+
+#### 0547_SRsim.mac
+     - Using "rfqll_tr_yp.dat" : yp = 0
+     - Event 16,116
+
+#### 0548_SRsim.mac
+     - Using "rfqll_tr_P.dat" : P = const. (8.446500e-03 GeV)
+     - Event 16,116
+
+#### 0550_SRsim.mac
+     - For study in realistic field.
+     - Using "rfqll_tr_ttf.dat"
+     - Using "ien_180621_ver5_3DEOpera_5.map"
+     - NE = 0.181911 , NB = 12.50
+     - Event 16,116
+
+#### 0560_SRsim.mac
+     - For test using data included time 0 information.
+     - Using "rfqll_tr_time_test.dat"
+     - Uniform EB-field
+
+#### 0561_SRsim.mac
+     - uniform EB-field emittance evaluation include longitudinal information (especially time)
+
+#### 0562_SRsim.mac
+     - uniform EB-field in EB-field
+     - using RFQ output beam "rfqll_time.dat"
+
 
 ## map field
    - Using RFQ output given from Otani-san
